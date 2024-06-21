@@ -6,10 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import ru.job4j.site.domain.StatusInterview;
 import ru.job4j.site.domain.StatusWisher;
-import ru.job4j.site.dto.InterviewDTO;
-import ru.job4j.site.dto.UserInfoDTO;
-import ru.job4j.site.dto.WisherDetailDTO;
-import ru.job4j.site.dto.WisherDto;
+import ru.job4j.site.dto.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,8 +33,11 @@ public class InterviewService {
     public InterviewDTO getById(String token, int id) throws JsonProcessingException {
         var text = new RestAuthCall(String.format("%s%d", URL_MOCK, id))
                 .get(token);
-        return new ObjectMapper().readValue(text, new TypeReference<>() {
-        });
+        InterviewDTO interviewDTO = new ObjectMapper().readValue(text, InterviewDTO.class);
+        /*Получаем информацию о создателе собеседования*/
+        profilesService.getProfileById(interviewDTO.getSubmitterId())
+                .ifPresent(submitterInfo -> interviewDTO.setAuthorName(submitterInfo.getUsername()));
+        return interviewDTO;
     }
 
     public void update(String token, InterviewDTO interviewDTO) throws JsonProcessingException {

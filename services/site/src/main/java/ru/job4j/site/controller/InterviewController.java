@@ -10,10 +10,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ru.job4j.site.domain.StatusInterview;
 import ru.job4j.site.dto.InterviewDTO;
 import ru.job4j.site.dto.UserInfoDTO;
-import ru.job4j.site.service.AuthService;
-import ru.job4j.site.service.InterviewService;
-import ru.job4j.site.service.TopicsService;
-import ru.job4j.site.service.WisherService;
+import ru.job4j.site.service.*;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -29,6 +26,7 @@ public class InterviewController {
     private final TopicsService topicsService;
     private final InterviewService interviewService;
     private final WisherService wisherService;
+    private final ProfilesService profilesService;
 
     @GetMapping("/createForm")
     public String createForm(@ModelAttribute("topicId") int topicId,
@@ -80,13 +78,14 @@ public class InterviewController {
         model.addAttribute("statuses", StatusInterview.values());
         model.addAttribute("STATUS_IN_PROGRESS_ID", StatusInterview.IN_PROGRESS.getId());
         model.addAttribute("STATUS_IS_FEEDBACK_ID", StatusInterview.IS_FEEDBACK.getId());
+        var authorInfo = profilesService.getProfileById(interview.getSubmitterId());
+        authorInfo.ifPresent(profileDTO -> model.addAttribute("authorName", profileDTO.getUsername()));
         if (isAuthor) {
             var wishersDetail = interviewService.getAllWisherDetail(wishers);
             boolean isDismissed = wisherService.isDismissed(interviewId, wishers);
             model.addAttribute("isDismissed", isDismissed);
             model.addAttribute("wishersDetail", wishersDetail);
         }
-
         RequestResponseTools.addAttrBreadcrumbs(model,
                 "Главная", "/index",
                 "Собеседования", "/interviews/",
