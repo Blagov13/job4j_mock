@@ -17,8 +17,6 @@ public class InterviewDTO {
 
     private int submitterId;
 
-    private String authorName;
-
     private String title;
 
     private String additional;

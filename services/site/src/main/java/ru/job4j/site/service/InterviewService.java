@@ -33,11 +33,8 @@ public class InterviewService {
     public InterviewDTO getById(String token, int id) throws JsonProcessingException {
         var text = new RestAuthCall(String.format("%s%d", URL_MOCK, id))
                 .get(token);
-        InterviewDTO interviewDTO = new ObjectMapper().readValue(text, InterviewDTO.class);
-        /*Получаем информацию о создателе собеседования*/
-        profilesService.getProfileById(interviewDTO.getSubmitterId())
-                .ifPresent(submitterInfo -> interviewDTO.setAuthorName(submitterInfo.getUsername()));
-        return interviewDTO;
+        return new ObjectMapper().readValue(text, new TypeReference<>() {
+        });
     }
 
     public void update(String token, InterviewDTO interviewDTO) throws JsonProcessingException {
