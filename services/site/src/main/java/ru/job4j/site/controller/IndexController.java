@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import ru.job4j.site.dto.CategoryDTO;
 import ru.job4j.site.dto.InterviewDTO;
 import ru.job4j.site.dto.ProfileDTO;
 import ru.job4j.site.service.*;
@@ -13,6 +14,7 @@ import ru.job4j.site.service.*;
 import javax.servlet.http.HttpServletRequest;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,8 +36,14 @@ public class IndexController {
         RequestResponseTools.addAttrBreadcrumbs(model,
                 "Главная", "/"
         );
+        List<CategoryDTO> categoryDTOS = categoriesService.getMostPopular();
+        Map<Integer, Long> integerLongMap = interviewsService.getInterviewCount(
+                categoryDTOS.stream()
+                        .map(CategoryDTO::getId)
+                        .toList());
         try {
-            model.addAttribute("categories", categoriesService.getMostPopular());
+            model.addAttribute("categories", categoryDTOS);
+            model.addAttribute("interviewsCount", integerLongMap);
             var token = getToken(req);
             if (token != null) {
                 var userInfo = authService.userInfo(token);
@@ -52,7 +60,7 @@ public class IndexController {
             Optional<ProfileDTO> profileDTO = profilesService.getProfileById(interviewDTO.getSubmitterId());
             profileDTO.ifPresent(profileDTOSet::add);
         }
-        model.addAttribute("new_interviews", interviewsService.getByType(1));
+        model.addAttribute("new_interviews", interviewDTOList);
         model.addAttribute("profiles", profileDTOSet);
         return "index";
     }
