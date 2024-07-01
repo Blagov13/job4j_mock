@@ -24,7 +24,7 @@ public class CheckActionTest {
     }
 
     @Test
-    public void testHandle_UserNotRegistered() {
+    public void testHandleUserNotRegistered() {
         Message message = mock(Message.class);
         when(message.getChatId()).thenReturn(123456L);
         when(tgUserService.findByChatId(anyLong())).thenReturn(Optional.empty());
@@ -34,7 +34,7 @@ public class CheckActionTest {
     }
 
     @Test
-    public void testHandle_UserRegistered() {
+    public void testHandleUserRegistered() {
         Message message = mock(Message.class);
         when(message.getChatId()).thenReturn(123456L);
         TgUser tgUser = new TgUser(1, "testUser", "test@mail.com", 123456L, 1001);

@@ -49,8 +49,8 @@ class UnsubscribeActionTest {
     @Test
     void testHandleUserNotRegistered() {
         long chatId = 123456789L;
-        String expectedText = "Вы ещё не зарегистрированы в системе.\n" +
-                "Для регистрации, пожалуйста, используйте команду /new.";
+        String expectedText = "Вы ещё не зарегистрированы в системе.\n"
+                + "Для регистрации, пожалуйста, используйте команду /new.";
 
         when(messageMock.getChatId()).thenReturn(chatId);
         when(tgUserService.checkUserExists(chatId)).thenReturn(false);

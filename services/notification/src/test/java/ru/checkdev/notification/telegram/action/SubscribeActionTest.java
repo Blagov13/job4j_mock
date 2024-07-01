@@ -32,9 +32,9 @@ class SubscribeActionTest {
     @Test
     void testHandleAccountAlreadyLinked() {
         long chatId = 123456789L;
-        String expectedText = "Ваш аккаунт телеграм уже привязан к аккаунту.\n" +
-                "Чтобы узнать данные используйте /check\n" +
-                "Чтобы отвязать аккаунт используйте /unsubscribe";
+        String expectedText = "Ваш аккаунт телеграм уже привязан к аккаунту.\n"
+                + "Чтобы узнать данные используйте /check\n"
+                + "Чтобы отвязать аккаунт используйте /unsubscribe";
 
         when(messageMock.getChatId()).thenReturn(chatId);
         when(tgUserService.checkUserExists(chatId)).thenReturn(true);
@@ -53,8 +53,8 @@ class SubscribeActionTest {
     @Test
     void testHandleAccountNotLinked() {
         long chatId = 123456789L;
-        String expectedText = "Для привязки аккаунта, введите, пожалуйста, email и пароль через пробел.\n" +
-                "Пример: \"example@mail.ru password\"";
+        String expectedText = "Для привязки аккаунта, введите, пожалуйста, email и пароль через пробел.\n"
+                + "Пример: \"example@mail.ru password\"";
 
         when(messageMock.getChatId()).thenReturn(chatId);
         when(tgUserService.checkUserExists(chatId)).thenReturn(false);
