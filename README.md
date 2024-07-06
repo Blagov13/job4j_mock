@@ -2,7 +2,7 @@
 
 ## Описание проекта
 
-Этот репозиторий содержит учебный проект "Mock" из курса ["Spring Boot Test"](https://job4j.ru/edu/course/java_spring_boot_test) от Job4j.
+Этот репозиторий содержит учебный проект "Mock" из курса ["Spring Boot Test"](https://job4j.ru/edu/course/java_spring_boot_test) от Job4j. 
 
 Цель проекта - изучение и применение на практике различных подходов к тестированию Spring Boot приложений, включая использование моков (mocks).
 
