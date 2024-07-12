@@ -17,13 +17,15 @@ import org.springframework.test.web.servlet.MockMvc;
 import ru.checkdev.mock.MockSrv;
 import ru.checkdev.mock.domain.Interview;
 import ru.checkdev.mock.repository.InterviewRepository;
+import ru.checkdev.mock.service.CategoriesService;
 import ru.checkdev.mock.service.InterviewService;
 
-import java.util.ArrayList;
-import java.util.List;
+import static org.hamcrest.Matchers.is;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+
+import java.util.*;
 import java.util.stream.IntStream;
 
-import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -33,13 +35,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = MockSrv.class)
 @AutoConfigureMockMvc
-class InterviewsControllerTest {
+class InterviewsControllerTests {
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockBean
     private InterviewService service;
+
+    @MockBean
+    private CategoriesService categoriesService;
 
     @MockBean
     private InterviewRepository interviewRepository;
@@ -97,5 +102,20 @@ class InterviewsControllerTest {
                 .andDo(print())
                 .andExpectAll(status().isOk(),
                         content().contentType(MediaType.APPLICATION_JSON));
+    }
+
+    @Test
+    @WithMockUser
+    public void whenCountByTopicIds() throws Exception {
+        List<Integer> topicIds = List.of(1, 2, 3);
+        Map<Integer, Long> countMap = Map.of(1, 10L, 2, 5L, 3, 8L);
+        when(categoriesService.getInterviewCount(topicIds)).thenReturn(countMap);
+        mockMvc.perform(get("/interviews/count/1,2,3"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.1", is(10)))
+                .andExpect(jsonPath("$.2", is(5)))
+                .andExpect(jsonPath("$.3", is(8)));
     }
 }

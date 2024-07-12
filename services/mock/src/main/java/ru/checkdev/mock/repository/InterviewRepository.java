@@ -33,4 +33,6 @@ public interface InterviewRepository extends JpaRepository<Interview, Integer> {
     void updateStatus(@Param("id") int id, @Param("status") int status);
 
     Page<Interview> findByTopicIdIn(Collection<Integer> topicIds, Pageable pageable);
+
+    List<Interview> findByTopicIdIn(Collection<Integer> topicIds);
 }

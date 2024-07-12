@@ -1,5 +1,6 @@
 package ru.checkdev.mock.web;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -7,11 +8,13 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.checkdev.mock.domain.Interview;
+import ru.checkdev.mock.service.CategoriesService;
 import ru.checkdev.mock.service.InterviewService;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/interviews")
@@ -19,6 +22,7 @@ import java.util.List;
 public class InterviewsController {
 
     private final InterviewService interviewService;
+    private final CategoriesService categoriesService;
 
     /*Аннотация не работает
     @PreAuthorize("isAuthenticated()") */
@@ -63,5 +67,18 @@ public class InterviewsController {
                 .status(HttpStatus.OK)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(interviewService.findByTopicsIds(topicIds, page, size));
+    }
+
+    @GetMapping("/count/{cids}")
+    public ResponseEntity<Map<Integer, Long>> count(@PathVariable String cids) throws JsonProcessingException {
+        var topicIdsArr = cids.split(",");
+        List<Integer> catIds = new ArrayList<>();
+        for (String id : topicIdsArr) {
+            catIds.add(Integer.valueOf(id));
+        }
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(categoriesService.getInterviewCount(catIds));
     }
 }

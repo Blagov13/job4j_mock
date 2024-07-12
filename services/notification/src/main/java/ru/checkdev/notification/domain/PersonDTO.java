@@ -15,10 +15,10 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 public class PersonDTO {
+    private String username;
     private String email;
     private String password;
     private boolean privacy;
     private List<RoleDTO> roles;
     private Calendar created;
-
 }

@@ -231,10 +231,10 @@
                                       th:if="${interview.status >= statuses.length}">Статус неизвестен</span>
                                 <i class="far fa-clock"></i>
                                 <span th:text="${#strings.substring(interview.createDate, 0, 10)}"></span>
-                                <span th:each="user: ${users}">
-                                    <span th:if="${interview.submitterId == user.getId()}">
-                                        <i class="far fa-user"></i>
-                                        <span th:text="${user.getUsername()}"></span>
+                                <span th:each="tgUser: ${users}">
+                                    <span th:if="${interview.submitterId == tgUser.getId()}">
+                                        <i class="far fa-tgUser"></i>
+                                        <span th:text="${tgUser.getUsername()}"></span>
                                     </span>
                                 </span>
                                 <!--Из переданного набора ENUM выбираем статус по его ID-->

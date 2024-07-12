@@ -1,20 +1,28 @@
 package ru.checkdev.notification.telegram.service;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.web.reactive.function.client.WebClient;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import org.junit.jupiter.api.*;
+
+import org.slf4j.LoggerFactory;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 import ru.checkdev.notification.domain.PersonDTO;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Testing TgAuthCallWebClint
@@ -22,75 +30,165 @@ import static org.mockito.Mockito.when;
  * @author Dmitry Stepanov, user Dmitry
  * @since 06.10.2023
  */
-@ExtendWith(MockitoExtension.class)
 class TgAuthCallWebClintTest {
-    private static final String URL = "http://tetsurl:15000";
-    @Mock
-    private WebClient webClientMock;
-    @Mock
-    private WebClient.RequestHeadersSpec requestHeadersMock;
-    @Mock
-    private WebClient.RequestHeadersUriSpec requestHeadersUriMock;
-    @Mock
-    private WebClient.RequestBodySpec requestBodyMock;
-    @Mock
-    private WebClient.RequestBodyUriSpec requestBodyUriMock;
-    @Mock
-    private WebClient.ResponseSpec responseMock;
-
     private TgAuthCallWebClint tgAuthCallWebClint;
 
-    @BeforeEach
-    void setUp() {
-        tgAuthCallWebClint = new TgAuthCallWebClint(URL);
-        tgAuthCallWebClint.setWebClient(webClientMock);
+    private static MockWebServer mockServer;
+
+    private Logger logger;
+    private ListAppender<ILoggingEvent> listAppender;
+
+    @BeforeAll
+    static void setUp() throws Exception {
+        mockServer = new MockWebServer();
+        mockServer.start();
     }
 
+    @BeforeEach
+    void initialize() {
+        String url = String.format("http://localhost:%s", mockServer.getPort());
+        tgAuthCallWebClint = new TgAuthCallWebClint(url);
+
+        logger = (Logger) LoggerFactory.getLogger(TgAuthCallWebClint.class);
+        listAppender = new ListAppender<>();
+        logger.addAppender(listAppender);
+    }
+
+    @AfterEach
+    void disableLogger() {
+        logger.detachAndStopAllAppenders();
+    }
+
+    @AfterAll
+    static void tearDown() throws IOException {
+        mockServer.shutdown();
+    }
 
     @Test
-    void whenDoGetThenReturnPersonDTO() {
-        Integer personId = 100;
-        var created = new Calendar.Builder()
-                .set(Calendar.DAY_OF_MONTH, 23)
-                .set(Calendar.MONTH, Calendar.OCTOBER)
-                .set(Calendar.YEAR, 2023)
-                .build();
-        var personDto = new PersonDTO("mail", "password", true, Collections.EMPTY_LIST, created);
-        when(webClientMock.get()).thenReturn(requestHeadersUriMock);
-        when(requestHeadersUriMock.uri("/person/" + personId)).thenReturn(requestHeadersMock);
-        when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-        when(responseMock.bodyToMono(PersonDTO.class)).thenReturn(Mono.just(personDto));
-        PersonDTO actual = tgAuthCallWebClint.doGet("/person/" + personId).block();
-        assertThat(actual).isEqualTo(personDto);
+    void whenDoGetThenReturnObject() throws JsonProcessingException {
+        var created = Calendar.getInstance();
+        PersonDTO personDto = new PersonDTO("username", "mail", "password", true, new ArrayList<>(), created);
+        ObjectMapper objectMapper = new ObjectMapper();
+        mockServer.enqueue(new MockResponse()
+                .setBody(objectMapper.writeValueAsString(personDto))
+                .addHeader("Content-Type", "application/json"));
+
+        Mono<Object> objectMono = tgAuthCallWebClint.doGet("/person/");
+        Map<String, Object> receivedObject = objectMapper.convertValue(objectMono.block(), Map.class);
+
+        assertThat(receivedObject)
+                .containsEntry("email", "mail")
+                .containsEntry("password", "password")
+                .containsEntry("created", created.getTimeInMillis());
     }
 
     @Test
     void whenDoGetThenReturnExceptionError() {
-        Integer personId = 100;
-        when(webClientMock.get()).thenReturn(requestHeadersUriMock);
-        when(requestHeadersUriMock.uri("/person/" + personId)).thenReturn(requestHeadersMock);
-        when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-        when(responseMock.bodyToMono(PersonDTO.class)).thenReturn(Mono.error(new Throwable("Error")));
-        assertThatThrownBy(() -> tgAuthCallWebClint.doGet("/person/" + personId).block())
-                .isInstanceOf(Throwable.class)
-                .hasMessageContaining("Error");
+        listAppender.start();
+        mockServer.enqueue(new MockResponse().setResponseCode(500));
+
+        assertThatThrownBy(() -> tgAuthCallWebClint.doGet("/person/").block())
+                .isInstanceOf(WebClientResponseException.class);
+        assertTrue(listAppender.list.stream()
+                .anyMatch(event -> event.toString().contains("API not found: 500 Internal Server Error"))
+        );
     }
 
     @Test
-    void whenDoPostSavePersonThenReturnNewPerson() {
-        var created = new Calendar.Builder()
-                .set(Calendar.DAY_OF_MONTH, 23)
-                .set(Calendar.MONTH, Calendar.OCTOBER)
-                .set(Calendar.YEAR, 2023)
-                .build();
-        var personDto = new PersonDTO("mail", "password", true, null, created);
-        when(webClientMock.post()).thenReturn(requestBodyUriMock);
-        when(requestBodyUriMock.uri("/person/created")).thenReturn(requestBodyMock);
-        when(requestBodyMock.bodyValue(personDto)).thenReturn(requestHeadersMock);
-        when(requestHeadersMock.retrieve()).thenReturn(responseMock);
-        when(responseMock.bodyToMono(Object.class)).thenReturn(Mono.just(personDto));
-        Mono<Object> objectMono = tgAuthCallWebClint.doPost("/person/created", personDto);
-        PersonDTO actual = (PersonDTO) objectMono.block();
-        assertThat(actual).isEqualTo(personDto);
+    void whenDoPostSavePersonThenReturnNewPerson() throws JsonProcessingException {
+        var created = Calendar.getInstance();
+        PersonDTO personDto = new PersonDTO("username", "mail", "password", true, new ArrayList<>(), created);
+        ObjectMapper objectMapper = new ObjectMapper();
+        mockServer.enqueue(new MockResponse()
+                .setBody(objectMapper.writeValueAsString(personDto))
+                .addHeader("Content-Type", "application/json"));
+
+        Mono<Object> objectMono = tgAuthCallWebClint.doPost("/person/", personDto);
+        Map<String, Object> receivedObject = objectMapper.convertValue(objectMono.block(), Map.class);
+
+        assertThat(receivedObject)
+                .containsEntry("email", "mail")
+                .containsEntry("password", "password")
+                .containsEntry("created", created.getTimeInMillis());
+    }
+
+    @Test
+    void whenDoPostThenReturnExceptionError() {
+        listAppender.start();
+        var created = Calendar.getInstance();
+        PersonDTO personDto = new PersonDTO("username", "mail", "password", true, null, created);
+        mockServer.enqueue(new MockResponse().setResponseCode(500));
+
+        assertThatThrownBy(() -> tgAuthCallWebClint.doPost("/person/", personDto).block())
+                .isInstanceOf(WebClientResponseException.class);
+        assertTrue(listAppender.list.stream()
+                .anyMatch(event -> event.toString().contains("API not found: 500 Internal Server Error"))
+        );
+    }
+
+    @Test
+    void whenTokenThenReturnTokenObject() {
+        Map<String, String> params = new HashMap<>();
+        params.put("username", "username");
+        params.put("password", "password");
+        ObjectMapper objectMapper = new ObjectMapper();
+        mockServer.enqueue(new MockResponse()
+                .setBody("{"
+                        + "\"access_token\": \"token\","
+                        + "\"token_type\": \"bearer\""
+                        + "}")
+                .addHeader("Content-Type", "application/json"));
+
+        Mono<Object> objectMono = tgAuthCallWebClint.token(params);
+        Map<String, Object> receivedObject = objectMapper.convertValue(objectMono.block(), Map.class);
+
+        assertThat(receivedObject)
+                .containsEntry("access_token", "token")
+                .containsEntry("token_type", "bearer");
+    }
+
+    @Test
+    void whenTokenThenReturnExceptionError() {
+        listAppender.start();
+        Map<String, String> params = new HashMap<>();
+        params.put("username", "username");
+        params.put("password", "password");
+        mockServer.enqueue(new MockResponse().setResponseCode(500));
+
+        assertThatThrownBy(() -> tgAuthCallWebClint.token(params).block())
+                .isInstanceOf(WebClientResponseException.class);
+        assertTrue(listAppender.list.stream()
+                .anyMatch(event -> event.toString().contains("API not found: 500 Internal Server Error"))
+        );
+    }
+
+    @Test
+    void whenDoGetWithTokenThenReturnObject() throws JsonProcessingException {
+        var created = Calendar.getInstance();
+        PersonDTO personDto = new PersonDTO("username", "mail", "password", true, new ArrayList<>(), created);
+        ObjectMapper objectMapper = new ObjectMapper();
+        mockServer.enqueue(new MockResponse()
+                .setBody(objectMapper.writeValueAsString(personDto))
+                .addHeader("Content-Type", "application/json"));
+
+        Mono<Object> objectMono = tgAuthCallWebClint.doGet("/person/", "token");
+        Map<String, Object> receivedObject = objectMapper.convertValue(objectMono.block(), Map.class);
+
+        assertThat(receivedObject)
+                .containsEntry("email", "mail")
+                .containsEntry("password", "password")
+                .containsEntry("created", created.getTimeInMillis());
+    }
+
+    @Test
+    void whenDoGetWithTokenThenReturnExceptionError() {
+        listAppender.start();
+        mockServer.enqueue(new MockResponse().setResponseCode(500));
+
+        assertThatThrownBy(() -> tgAuthCallWebClint.doGet("/person/", "token").block())
+                .isInstanceOf(WebClientResponseException.class);
+        assertTrue(listAppender.list.stream()
+                .anyMatch(event -> event.toString().contains("API not found: 500 Internal Server Error"))
+        );
     }
 }

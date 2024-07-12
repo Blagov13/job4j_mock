@@ -9,8 +9,8 @@ import org.springframework.stereotype.Service;
 import ru.job4j.site.dto.InterviewDTO;
 import ru.job4j.site.util.RestPageImpl;
 
-import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class InterviewsService {
@@ -71,5 +71,13 @@ public class InterviewsService {
             }
         }
         return builder.toString();
+    }
+
+    public Map<Integer, Long> getInterviewCount(List<Integer> catIds) throws JsonProcessingException {
+        var cids = parseIdsListToString(catIds);
+        var text = new RestAuthCall(String
+                .format("http://localhost:9912/interviews/count/%s", cids)).get();
+        var mapper = new ObjectMapper();
+        return mapper.readValue(text, Map.class);
     }
 }

@@ -75,7 +75,7 @@
                       th:if="${interview.status >= statuses.length}">Статус неизвестен</span>
                  <i class="far fa-clock"></i>
                  <span th:text="${#strings.substring(interview.createDate, 0, 10)}"></span>
-                 <i class="far fa-user"></i>
+                 <i class="far fa-tgUser"></i>
                  <span>ФИО Автора</span>
                 <span th:if="${userInfo != null}">
                  <span class="fw-bold" th:text=${userInfo.username}></span>

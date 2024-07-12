@@ -10,10 +10,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ru.job4j.site.domain.StatusInterview;
 import ru.job4j.site.dto.InterviewDTO;
 import ru.job4j.site.dto.UserInfoDTO;
-import ru.job4j.site.service.AuthService;
-import ru.job4j.site.service.InterviewService;
-import ru.job4j.site.service.TopicsService;
-import ru.job4j.site.service.WisherService;
+import ru.job4j.site.service.*;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -86,7 +83,6 @@ public class InterviewController {
             model.addAttribute("isDismissed", isDismissed);
             model.addAttribute("wishersDetail", wishersDetail);
         }
-
         RequestResponseTools.addAttrBreadcrumbs(model,
                 "Главная", "/index",
                 "Собеседования", "/interviews/",

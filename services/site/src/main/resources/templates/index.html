@@ -63,8 +63,11 @@
                                         <span class="badge bg-success">Новое</span>
                                         <i class="far fa-clock"></i>
                                         <span th:text="${#strings.substring(interview.createDate, 0, 10)}"></span>
-                                        <i class="far fa-user"></i>
-                                        <span>ФИО пользователя</span>
+                                        <i class="far fa-tgUser"></i>
+                                        <span th:each="profile: ${profiles}">
+                                        <span th:if="${profile.id == interview.submitterId}"></span>
+                                            <span th:text="${profile.username}"></span>
+                                        </span>
                                     </span>
                                 </div>
                             </td>
@@ -105,7 +108,11 @@
                                 </small>
                             </td>
                             <td>
-                                <span class="badge bg-success">Новых: 100</span>
+                                <span th:each="interviewCount: ${interviewsCount}">
+                                    <span th:if="${#strings.equals(interviewCount.key, #strings.toString(category.id))}">
+                                        <span class="badge bg-success" th:text="${interviewCount.value}"></span>
+                                    </span>
+                                </span>
                             </td>
                         </tr>
                         </tbody>

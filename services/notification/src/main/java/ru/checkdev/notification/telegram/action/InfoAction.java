@@ -23,12 +23,19 @@ public class InfoAction implements Action {
     @Override
     public BotApiMethod<Message> handle(Message message) {
         var chatId = message.getChatId().toString();
+        String command = message.getText().trim();
         String sl = System.lineSeparator();
         var out = new StringBuilder();
-        out.append("Выберите действие:").append(sl);
-        for (String action : actions) {
-            out.append(action).append(sl);
+
+        if (command.equals("/start")) {
+            out.append("Выберите действие:").append(sl);
+            for (String action : actions) {
+                out.append(action).append(sl);
+            }
+        } else {
+            out.append("Команда не найдена. Пожалуйста, используйте действительную команду.").append(sl);
         }
+
         return new SendMessage(chatId, out.toString());
     }
 
